@@ -1,2 +1,5 @@
-# HTML5Platformer
-First attempt at a HTML5 game
+
+
+Artwork licenses: 
+
+tiles: public domain - http://opengameart.org/content/platformer-art-deluxe
