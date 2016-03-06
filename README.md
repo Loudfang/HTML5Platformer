@@ -1,4 +1,4 @@
-PLAY THE GAME AT : loudfang.github.io/HTML5Platformer/
+PLAY THE GAME AT : http://loudfang.github.io/HTML5Platformer/
 
 Artwork licenses: 
 
