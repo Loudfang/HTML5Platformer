@@ -10,8 +10,17 @@ var Q = Quintus()
 //player
 Q.Sprite.extend("Player", {
     init: function (p) {
-        this._super(p, {asset: "player.png", x: 110, y: 50, jumpSpeed: -380});
+        this._super(p, {asset: "player.png", x: 110, y: 50, jumpSpeed: -380, lives: 3, coins: 0});
         this.add('2d, platformerControls');
+
+        this.on("hit.sprite", function (collision) {
+            if (collision.obj.isA("Coin")) {
+                collision.obj.destroy();
+                this.p.coins++;
+                var coinsLabel = Q("UI.Text", 1).items[1];
+                coinsLabel.p.label = 'Coins x' + this.p.coins;
+            }
+        });
     },
     step: function (dt) {
         if (Q.inputs['left'] && this.p.direction == 'right') {
@@ -20,6 +29,35 @@ Q.Sprite.extend("Player", {
         if (Q.inputs['right'] && this.p.direction == 'left') {
             this.p.flip = false;
         }
+        if (this.p.timeInvincible > 0) {
+            this.p.timeInvincible = Math.max(this.p.timeInvincible - dt, 0);
+        }
+    },
+    damage: function () {
+        // does a check for invince
+        if (!this.p.timeInvincible) {
+            this.p.lives--;
+
+            //time invince will be 1 second
+            this.p.timeInvincible = 1;
+
+            if (this.p.lives < 0) {
+                //RIP IN PEPERONIS
+                this.destroy();
+                Q.stageScene("endGame", 1, {label: "YOU DIED LOSER"});
+            }
+            else {
+                var livesLabel = Q("UI.Text", 1).first();
+                livesLabel.p.label = "Lives x " + this.p.lives;
+            }
+        }
+    }
+});
+
+//the delicious coins
+Q.Sprite.extend("Coin", {
+    init: function (p) {
+        this._super(p, {asset: "coin.png"});
     }
 });
 
@@ -28,10 +66,7 @@ Q.component("commonEnemy", {
         var entity = this.entity;
         entity.on("bump.left,bump.right,bump.bottom", function (collision) {
             if (collision.obj.isA("Player")) {
-                Q.stageScene("endGame", 1, {label: "Game Over"});
-
-                //RIP player
-                collision.obj.destroy();
+                collision.obj.damage();
             }
         });
         entity.on("bump.top", function (collision) {
@@ -109,7 +144,7 @@ Q.scene("level1", function (stage) {
 
     stage.add("viewport").follow(player, {x: true, y: true}, {minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h});
 
-    //Loading monster assets via JSON
+    //Loading monsters and other assets via JSON
     //level assets. format must be as shown: [[ClassName, params], .. ] 
     var levelAssets = [
         ["GroundEnemy", {x: 18 * 70, y: 6 * 70, asset: "slime.png"}],
@@ -118,7 +153,21 @@ Q.scene("level1", function (stage) {
         ["GroundEnemy", {x: 6 * 70, y: 3 * 70, asset: "slime.png"}],
         ["GroundEnemy", {x: 8 * 70, y: 70, asset: "slime.png"}],
         ["GroundEnemy", {x: 18 * 70, y: 120, asset: "slime.png"}],
-        ["GroundEnemy", {x: 12 * 70, y: 120, asset: "slime.png"}]
+        ["GroundEnemy", {x: 12 * 70, y: 120, asset: "slime.png"}],
+        ["Coin", {x: 300, y: 100}],
+        ["Coin", {x: 360, y: 100}],
+        ["Coin", {x: 420, y: 100}],
+        ["Coin", {x: 480, y: 100}],
+        ["Coin", {x: 800, y: 300}],
+        ["Coin", {x: 860, y: 300}],
+        ["Coin", {x: 920, y: 300}],
+        ["Coin", {x: 980, y: 300}],
+        ["Coin", {x: 1040, y: 300}],
+        ["Coin", {x: 1100, y: 300}],
+        ["Coin", {x: 1160, y: 300}],
+        ["Coin", {x: 1250, y: 400}],
+        ["Coin", {x: 1310, y: 400}],
+        ["Coin", {x: 1370, y: 400}]
     ];
 
     //load level assets
@@ -130,11 +179,41 @@ Q.scene("endGame", function (stage) {
     window.location = "";
 });
 
+Q.scene("gameStats", function (stage) {
+    var statsContainer = stage.insert(new Q.UI.Container({fill: "gray",
+        x: 960 / 2,
+        y: 620,
+        border: 1,
+        shadow: 3,
+        shadowColor: "rgba(0,0,0,0.5)",
+        w: 960,
+        h: 40
+    })
+            );
+
+
+    var lives = stage.insert(new Q.UI.Text({
+        label: "Lives x 3",
+        color: "white",
+        x: -300,
+        y: 0
+    }), statsContainer);
+
+    var coins = stage.insert(new Q.UI.Text({
+        label: "Coins x 0",
+        color: "white",
+        x: 300,
+        y: 0
+    }), statsContainer);
+
+});
+
 
 //load assets
-Q.load("tiles_map.png, player.png, fly.png, slime.png, level1.tmx", function () {
+Q.load("tiles_map.png, player.png, fly.png, slime.png, coin.png, level1.tmx", function () {
     Q.sheet("tiles", "tiles_map.png", {tilew: 70, tileh: 70});
     Q.stageScene("level1");
+    Q.stageScene("gameStats", 1);
 
 
 });
